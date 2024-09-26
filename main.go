@@ -27,11 +27,10 @@ func main() {
 }
 
 func getUser(w http.ResponseWriter, r *http.Request) {
-	first_name := r.URL.Query().Get("first_name")
-	last_name := r.URL.Query().Get("last_name")
+	firstName := r.URL.Query().Get("first_name")
 
 	// Vulnerable SQL query (potential SQL injection)
-	query := fmt.Sprintf("SELECT id, name FROM users WHERE first_name = '%s' AND last_name = '%s'", first_name, last_name)
+	query := fmt.Sprintf("SELECT * FROM users WHERE first_name = '%s' OR 1=1", firstName)
 
 	rows, err := db.Query(query)
 	if err != nil {
