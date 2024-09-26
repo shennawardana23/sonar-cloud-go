@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -27,17 +28,32 @@ func main() {
 
 func getUser(w http.ResponseWriter, r *http.Request) {
 	first_name := r.URL.Query().Get("first_name")
+	last_name := r.URL.Query().Get("last_name")
 
 	// Vulnerable SQL query (potential SQL injection)
-	query := fmt.Sprintf("SELECT * FROM users WHERE first_name = '%s'", first_name)
+	query := fmt.Sprintf("SELECT id, name FROM users WHERE first_name = '%s' AND last_name = '%s'", first_name, last_name)
 
-	var id int
-	var name string
-	err := db.QueryRow(query).Scan(&id, &name)
+	rows, err := db.Query(query)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	defer rows.Close()
 
-	fmt.Fprintf(w, "User ID: %d, Name: %s", id, name)
+	var users []string
+	for rows.Next() {
+		var id int
+		var name string
+		if err := rows.Scan(&id, &name); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		users = append(users, fmt.Sprintf("User ID: %d, Name: %s", id, name))
+	}
+
+	if len(users) == 0 {
+		fmt.Fprintf(w, "No users found")
+	} else {
+		fmt.Fprintf(w, strings.Join(users, "\n"))
+	}
 }
