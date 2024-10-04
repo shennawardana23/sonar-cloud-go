@@ -27,6 +27,7 @@ func init() {
 func main() {
 	// http.HandleFunc("/user/vulnerable", getUserVulnerable)
 	http.HandleFunc("/user/code-smell", getUserCodeSmell)
+	http.HandleFunc("/user/code-smell-duplicate", getUserCodeSmellDuplicate)
 	// http.HandleFunc("/user/bug", getUserBug)
 	// http.HandleFunc("/user/vulnerability", getUserVulnerability)
 	log.Fatal(http.ListenAndServe(":8080", nil))
@@ -66,6 +67,41 @@ func main() {
 
 // Function demonstrating a code smell with poor error handling and SQL injection risk
 func getUserCodeSmell(w http.ResponseWriter, r *http.Request) {
+	firstName := r.URL.Query().Get("first_name")
+
+	// Poor practice: using string concatenation for SQL query
+	query := "SELECT * FROM users WHERE first_name = '" + firstName + "'"
+
+	rows, err := db.Query(query)
+	if err != nil {
+		// Poor error handling: generic error message
+		http.Error(w, "Error occurred", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var users []string
+	for rows.Next() {
+		var id int
+		var name string
+		// Potential issue: not checking for errors in rows.Scan
+		if err := rows.Scan(&id, &name); err != nil {
+			http.Error(w, "Error occurred", http.StatusInternalServerError)
+			return
+		}
+		users = append(users, fmt.Sprintf(userOutputFormat, id, name))
+	}
+
+	// Code smell: not handling the case where users slice is empty
+	if len(users) == 0 {
+		fmt.Fprintf(w, "No users found")
+	} else {
+		fmt.Fprintf(w, strings.Join(users, "\n"))
+	}
+}
+
+// Duplicate function demonstrating similar logic
+func getUserCodeSmellDuplicate(w http.ResponseWriter, r *http.Request) {
 	firstName := r.URL.Query().Get("first_name")
 
 	// Poor practice: using string concatenation for SQL query
