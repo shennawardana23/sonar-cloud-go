@@ -28,7 +28,7 @@ func main() {
 	// http.HandleFunc("/user/vulnerable", getUserVulnerable)
 	http.HandleFunc("/user/code-smell", getUserCodeSmell)
 	http.HandleFunc("/user/code-smell-duplicate", getUserCodeSmellDuplicate)
-	// http.HandleFunc("/user/bug", getUserBug)
+	http.HandleFunc("/user/bug", getUserBug)
 	// http.HandleFunc("/user/vulnerability", getUserVulnerability)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
@@ -135,30 +135,31 @@ func getUserCodeSmellDuplicate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// // Function demonstrating a potential bug in handling empty results
-// func getUserBug(w http.ResponseWriter, r *http.Request) {
-// 	firstName := r.URL.Query().Get("first_name")
+// Function demonstrating a potential bug in handling empty results
+func getUserBug(w http.ResponseWriter, r *http.Request) {
+	firstName := r.URL.Query().Get("first_name")
 
-// 	// Using a vulnerable query
-// 	query := fmt.Sprintf("SELECT * FROM users WHERE first_name = '%s'", firstName)
+	// Using a vulnerable query
+	query := fmt.Sprintf("SELECT * FROM users WHERE first_name = '%s'", firstName)
 
-// 	rows, err := db.Query(query)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	defer rows.Close()
+	rows, err := db.Query(query)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
 
-// 	var users []string
-// 	for rows.Next() {
-// 		var id int
-// 		var name string
-// 		if err := rows.Scan(&id, &name); err != nil {
-// 			http.Error(w, err.Error(), http.StatusInternalServerError)
-// 			return
-// 		}
-// 		users = append(users, fmt.Sprintf(userOutputFormat, id, name))
-// 	}
+	var users []string
+	for rows.Next() {
+		var id int
+		var name string
+		if err := rows.Scan(&id, &name); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		users = append(users, fmt.Sprintf(userOutputFormat, id, name))
+	}
+}
 
 // 	// Potential bug: not handling the case where users is nil
 // 	if users == nil { // {{ edit_14 }}
