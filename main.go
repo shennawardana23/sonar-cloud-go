@@ -22,15 +22,116 @@ func init() {
 }
 
 func main() {
-	http.HandleFunc("/user", getUser)
+	http.HandleFunc("/user/vulnerable", getUserVulnerable)
+	http.HandleFunc("/user/code-smell", getUserCodeSmell)
+	http.HandleFunc("/user/bug", getUserBug)
+	http.HandleFunc("/user/vulnerability", getUserVulnerability)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-func getUser(w http.ResponseWriter, r *http.Request) {
+// Vulnerable function demonstrating SQL Injection
+func getUserVulnerable(w http.ResponseWriter, r *http.Request) {
 	firstName := r.URL.Query().Get("first_name")
 
 	// Vulnerable SQL query (potential SQL injection)
-	query := fmt.Sprintf("SELECT * FROM users WHERE first_name = '%s' OR 1=1", firstName)
+	query := fmt.Sprintf("SELECT * FROM users WHERE first_name = '%s' OR 1=1", firstName) // {{ edit_5 }}
+
+	rows, err := db.Query(query)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var users []string
+	for rows.Next() {
+		var id int
+		var name string
+		if err := rows.Scan(&id, &name); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		users = append(users, fmt.Sprintf("User ID: %d, Name: %s", id, name))
+	}
+
+	if len(users) == 0 {
+		fmt.Fprintf(w, "No users found")
+	} else {
+		fmt.Fprintf(w, strings.Join(users, "\n"))
+	}
+}
+
+// Function demonstrating a code smell with poor error handling
+func getUserCodeSmell(w http.ResponseWriter, r *http.Request) {
+	firstName := r.URL.Query().Get("first_name")
+
+	// Poor error handling
+	query := "SELECT * FROM users WHERE first_name = '" + firstName + "'" // {{ edit_6 }}
+
+	rows, err := db.Query(query)
+	if err != nil {
+		http.Error(w, "Error occurred", http.StatusInternalServerError) // {{ edit_7 }}
+		return
+	}
+	defer rows.Close()
+
+	var users []string
+	for rows.Next() {
+		var id int
+		var name string
+		if err := rows.Scan(&id, &name); err != nil {
+			http.Error(w, "Error occurred", http.StatusInternalServerError) // {{ edit_8 }}
+			return
+		}
+		users = append(users, fmt.Sprintf("User ID: %d, Name: %s", id, name))
+	}
+
+	if len(users) == 0 {
+		fmt.Fprintf(w, "No users found")
+	} else {
+		fmt.Fprintf(w, strings.Join(users, "\n"))
+	}
+}
+
+// Function demonstrating a potential bug in handling empty results
+func getUserBug(w http.ResponseWriter, r *http.Request) {
+	firstName := r.URL.Query().Get("first_name")
+
+	// Using a vulnerable query
+	query := fmt.Sprintf("SELECT * FROM users WHERE first_name = '%s'", firstName) // {{ edit_9 }}
+
+	rows, err := db.Query(query)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var users []string
+	for rows.Next() {
+		var id int
+		var name string
+		if err := rows.Scan(&id, &name); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		users = append(users, fmt.Sprintf("User ID: %d, Name: %s", id, name))
+	}
+
+	// Potential bug: not handling the case where users is nil
+	if users == nil { // {{ edit_10 }}
+		fmt.Fprintf(w, "No users found")
+	} else {
+		fmt.Fprintf(w, strings.Join(users, "\n"))
+	}
+}
+
+// Function demonstrating a lack of input validation (vulnerability)
+func getUserVulnerability(w http.ResponseWriter, r *http.Request) {
+	firstName := r.URL.Query().Get("first_name")
+
+	// No input validation
+	query := fmt.Sprintf("SELECT * FROM users WHERE first_name = '%s'", firstName) // {{ edit_11 }}
 
 	rows, err := db.Query(query)
 	if err != nil {
