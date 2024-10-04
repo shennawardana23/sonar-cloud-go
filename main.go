@@ -13,7 +13,7 @@ import (
 var db *sql.DB
 
 // Define a constant for the user output format
-const userOutputFormat = "User ID: %d, Name: %s" // {{ edit_1 }}
+const userOutputFormat = "User ID: %d, Name: %s"
 
 func init() {
 	var err error
@@ -25,10 +25,10 @@ func init() {
 }
 
 func main() {
-	http.HandleFunc("/user/vulnerable", getUserVulnerable) // {{ edit_2 }}
-	// http.HandleFunc("/user/code-smell", getUserCodeSmell)        // {{ edit_3 }}
-	// http.HandleFunc("/user/bug", getUserBug)                     // {{ edit_4 }}
-	// http.HandleFunc("/user/vulnerability", getUserVulnerability) // {{ edit_5 }}
+	http.HandleFunc("/user/vulnerable", getUserVulnerable)
+	// http.HandleFunc("/user/code-smell", getUserCodeSmell)
+	// http.HandleFunc("/user/bug", getUserBug)
+	// http.HandleFunc("/user/vulnerability", getUserVulnerability)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
@@ -37,7 +37,7 @@ func getUserVulnerable(w http.ResponseWriter, r *http.Request) {
 	firstName := r.URL.Query().Get("first_name")
 
 	// Vulnerable SQL query (potential SQL injection)
-	query := fmt.Sprintf("SELECT * FROM users WHERE first_name = '%s' OR 1=1", firstName) // {{ edit_6 }}
+	query := fmt.Sprintf("SELECT * FROM users WHERE first_name = '%s' OR 1=1", firstName)
 
 	rows, err := db.Query(query)
 	if err != nil {
@@ -54,7 +54,7 @@ func getUserVulnerable(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		users = append(users, fmt.Sprintf(userOutputFormat, id, name)) // {{ edit_7 }}
+		users = append(users, fmt.Sprintf(userOutputFormat, id, name))
 	}
 
 	if len(users) == 0 {
@@ -69,11 +69,11 @@ func getUserVulnerable(w http.ResponseWriter, r *http.Request) {
 // 	firstName := r.URL.Query().Get("first_name")
 
 // 	// Poor error handling
-// 	query := "SELECT * FROM users WHERE first_name = '" + firstName + "'" // {{ edit_8 }}
+// 	query := "SELECT * FROM users WHERE first_name = '" + firstName + "'"
 
 // 	rows, err := db.Query(query)
 // 	if err != nil {
-// 		http.Error(w, "Error occurred", http.StatusInternalServerError) // {{ edit_9 }}
+// 		http.Error(w, "Error occurred", http.StatusInternalServerError)
 // 		return
 // 	}
 // 	defer rows.Close()
@@ -83,10 +83,10 @@ func getUserVulnerable(w http.ResponseWriter, r *http.Request) {
 // 		var id int
 // 		var name string
 // 		if err := rows.Scan(&id, &name); err != nil {
-// 			http.Error(w, "Error occurred", http.StatusInternalServerError) // {{ edit_10 }}
+// 			http.Error(w, "Error occurred", http.StatusInternalServerError)
 // 			return
 // 		}
-// 		users = append(users, fmt.Sprintf(userOutputFormat, id, name)) // {{ edit_11 }}
+// 		users = append(users, fmt.Sprintf(userOutputFormat, id, name))
 // 	}
 
 // 	if len(users) == 0 {
@@ -101,7 +101,7 @@ func getUserVulnerable(w http.ResponseWriter, r *http.Request) {
 // 	firstName := r.URL.Query().Get("first_name")
 
 // 	// Using a vulnerable query
-// 	query := fmt.Sprintf("SELECT * FROM users WHERE first_name = '%s'", firstName) // {{ edit_12 }}
+// 	query := fmt.Sprintf("SELECT * FROM users WHERE first_name = '%s'", firstName)
 
 // 	rows, err := db.Query(query)
 // 	if err != nil {
@@ -118,7 +118,7 @@ func getUserVulnerable(w http.ResponseWriter, r *http.Request) {
 // 			http.Error(w, err.Error(), http.StatusInternalServerError)
 // 			return
 // 		}
-// 		users = append(users, fmt.Sprintf(userOutputFormat, id, name)) // {{ edit_13 }}
+// 		users = append(users, fmt.Sprintf(userOutputFormat, id, name))
 // 	}
 
 // 	// Potential bug: not handling the case where users is nil
@@ -134,7 +134,7 @@ func getUserVulnerable(w http.ResponseWriter, r *http.Request) {
 // 	firstName := r.URL.Query().Get("first_name")
 
 // 	// No input validation
-// 	query := fmt.Sprintf("SELECT * FROM users WHERE first_name = '%s'", firstName) // {{ edit_15 }}
+// 	query := fmt.Sprintf("SELECT * FROM users WHERE first_name = '%s'", firstName)
 
 // 	rows, err := db.Query(query)
 // 	if err != nil {
@@ -151,7 +151,7 @@ func getUserVulnerable(w http.ResponseWriter, r *http.Request) {
 // 			http.Error(w, err.Error(), http.StatusInternalServerError)
 // 			return
 // 		}
-// 		users = append(users, fmt.Sprintf(userOutputFormat, id, name)) // {{ edit_16 }}
+// 		users = append(users, fmt.Sprintf(userOutputFormat, id, name))
 // 	}
 
 // 	if len(users) == 0 {
