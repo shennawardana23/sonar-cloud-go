@@ -1,211 +1,208 @@
 package main
 
 import (
-	"crypto/md5"
+	"crypto"
 	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 )
 
 var db *sql.DB
-var secretKey string = "mySecretKey" // Security hotspot: Hardcoded secret
+var secretKey string = "my_secret_key" // Hardcoded secret
 
-// Define a constant for the user output format
-const userOutputFormat = "User ID: %d, Name: %s"
-
-func init() {
+func main() {
+	// Initialize MySQL database connection
 	var err error
-	// Replace with your actual MySQL connection details
-	db, err = sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/db_pba_local")
+	db, err = sql.Open("mysql", "user:password@tcp(localhost:3306)/testdb")
 	if err != nil {
 		log.Fatal(err)
 	}
-}
+	defer db.Close()
 
-func main() {
+	// Test the database connection
+	err = db.Ping()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Connected to MySQL database")
+
+	// Set up Gin router
 	r := gin.Default()
 
-	r.GET("/user/code-smell", getUserCodeSmell)
-	r.GET("/user/code-smell-duplicate", getUserCodeSmellDuplicate)
-	r.GET("/user/bug", getUserBug)
-	r.GET("/user/vulnerability", getUserVulnerability)
-	r.GET("/user/security-hotspot", getUserSecurityHotspot)
+	// Vulnerable endpoint
+	r.GET("/user/vulnerable", getVulnerableUser)
 
-	log.Fatal(r.Run(":8080"))
+	// Secure endpoint
+	r.GET("/user/secure", getSecureUser)
+
+	// Unused function
+	unusedFunction()
+
+	// Run the server
+	r.Run(":8080")
+
+	// Call the extremely bad function
+	ExtremelyBadFunction("test_input")
 }
 
-// Function demonstrating code smells
-func getUserCodeSmell(c *gin.Context) {
-	firstName := c.Query("first_name")
+// getVulnerableUser is vulnerable to SQL injection
+func getVulnerableUser(c *gin.Context) {
+	username := c.Query("username")
 
-	// Code smell: Complex boolean expression
-	if firstName != "" && firstName != "admin" && firstName != "guest" && firstName != "user" {
-		// Poor practice: using string concatenation for SQL query
-		query := "SELECT * FROM users WHERE first_name = '" + firstName + "'"
+	// Vulnerable SQL query
+	query := fmt.Sprintf("SELECT id, username, email FROM users WHERE username = '%s'", username)
 
-		rows, err := db.Query(query)
-		if err != nil {
-			// Poor error handling: generic error message
-			c.String(http.StatusInternalServerError, "Error occurred")
-			return
-		}
-		defer rows.Close()
-
-		var users []string
-		for rows.Next() {
-			var id int
-			var name string
-			// Potential issue: not checking for errors in rows.Scan
-			rows.Scan(&id, &name)
-			users = append(users, fmt.Sprintf(userOutputFormat, id, name))
-		}
-
-		// Code smell: not handling the case where users slice is empty
-		c.String(http.StatusOK, strings.Join(users, "\n"))
-	}
-}
-
-// Duplicate function demonstrating similar logic (code duplication)
-func getUserCodeSmellDuplicate(c *gin.Context) {
-	firstName := c.Query("first_name")
-
-	// Code smell: Complex boolean expression (duplicated)
-	if firstName != "" && firstName != "admin" && firstName != "guest" && firstName != "user" {
-		// Poor practice: using string concatenation for SQL query
-		query := "SELECT * FROM users WHERE first_name = '" + firstName + "'"
-
-		rows, err := db.Query(query)
-		if err != nil {
-			// Poor error handling: generic error message
-			c.String(http.StatusInternalServerError, "Error occurred")
-			return
-		}
-		defer rows.Close()
-
-		var users []string
-		for rows.Next() {
-			var id int
-			var name string
-			// Potential issue: not checking for errors in rows.Scan
-			rows.Scan(&id, &name)
-			users = append(users, fmt.Sprintf(userOutputFormat, id, name))
-		}
-
-		// Code smell: not handling the case where users slice is empty
-		c.String(http.StatusOK, strings.Join(users, "\n"))
-	}
-}
-
-// Function demonstrating potential bugs
-func getUserBug(c *gin.Context) {
-	firstName := c.Query("first_name")
-
-	// Bug: Incorrect string comparison
-	if firstName == "admin" || firstName == "Admin" {
-		c.String(http.StatusOK, "Admin user")
-		return
-	}
-
-	// Using a vulnerable query
-	query := fmt.Sprintf("SELECT * FROM users WHERE first_name = '%s'", firstName)
-
-	rows, err := db.Query(query)
+	var id int
+	var name, email string
+	err := db.QueryRow(query).Scan(&id, &name, &email)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
-	defer rows.Close()
 
-	var users []string
-	for rows.Next() {
-		var id int
-		var name string
-		if err := rows.Scan(&id, &name); err != nil {
-			c.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-		users = append(users, fmt.Sprintf(userOutputFormat, id, name))
+	c.JSON(http.StatusOK, gin.H{"id": id, "username": name, "email": email})
+}
+
+// getSecureUser uses parameterized queries to prevent SQL injection
+func getSecureUser(c *gin.Context) {
+	username := c.Query("username")
+
+	// Secure SQL query using parameterized statement
+	query := "SELECT id, username, email FROM users WHERE username = ?"
+
+	var id int
+	var name, email string
+	err := db.QueryRow(query, username).Scan(&id, &name, &email)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
 	}
 
-	// Bug: Incorrect nil check for slice
-	if users == nil {
-		c.String(http.StatusOK, "No users found")
+	c.JSON(http.StatusOK, gin.H{"id": id, "username": name, "email": email})
+}
+
+// Unused function
+func unusedFunction() {
+	fmt.Println("This function is never called")
+}
+
+// Function with security vulnerability
+func createTempFile(filename string) {
+	f, _ := os.Create(filename) // Ignoring error
+	defer f.Close()
+}
+
+// BadQualityFunction demonstrates various code smells and quality issues
+func BadQualityFunction(x int, y int, z int) {
+	var result int
+	var unused_variable string = "This is never used"
+
+	if x == y {
+		result = x + y
+	} else if x == y { // Duplicate condition
+		result = x - y
 	} else {
-		c.String(http.StatusOK, strings.Join(users, "\n"))
-	}
-}
-
-// Function demonstrating SQL injection vulnerability
-func getUserVulnerability(c *gin.Context) {
-	firstName := c.Query("first_name")
-
-	// Vulnerable SQL query without input validation
-	query := fmt.Sprintf("SELECT * FROM users WHERE first_name = '%s' OR 1=1", firstName)
-
-	rows, err := db.Query(query)
-	if err != nil {
-		c.String(http.StatusInternalServerError, "Database query failed")
-		return
-	}
-	defer rows.Close()
-
-	var users []string
-	for rows.Next() {
-		var id int
-		var name string
-		if err := rows.Scan(&id, &name); err != nil {
-			c.String(http.StatusInternalServerError, "Error scanning results")
-			return
-		}
-		users = append(users, fmt.Sprintf(userOutputFormat, id, name))
+		result = x * y
 	}
 
-	c.String(http.StatusOK, strings.Join(users, "\n"))
-}
-
-// Function demonstrating security hotspots and other issues
-func getUserSecurityHotspot(c *gin.Context) {
-	firstName := c.Query("first_name")
-	password := c.Query("password")
-
-	// Security hotspot: Weak cryptographic algorithm
-	hashedPassword := fmt.Sprintf("%x", md5.Sum([]byte(password)))
-
-	// Potential SQL injection (repeated for emphasis)
-	query := fmt.Sprintf("SELECT * FROM users WHERE first_name = '%s' AND password = '%s'", firstName, hashedPassword)
-
-	rows, err := db.Query(query)
-	if err != nil {
-		// Security issue: Detailed error exposed to user
-		c.String(http.StatusInternalServerError, fmt.Sprintf("Database error: %v", err))
-		return
-	}
-	defer rows.Close()
-
-	var users []string
-	for rows.Next() {
-		var id int
-		var name string
-		var storedPassword string
-		if err := rows.Scan(&id, &name, &storedPassword); err != nil {
-			c.String(http.StatusInternalServerError, "Error scanning results")
-			return
-		}
-		// Security issue: Timing attack vulnerability
-		if storedPassword == hashedPassword {
-			users = append(users, fmt.Sprintf(userOutputFormat, id, name))
+	for i := 0; i < 10; i++ {
+		if i == 5 {
+			break
+		} else {
+			continue
 		}
 	}
 
-	// Security hotspot: Information exposure
-	if len(users) == 0 {
-		c.String(http.StatusOK, "Invalid username or password")
+	switch z {
+	case 1:
+		fmt.Println("One")
+	case 2:
+		fmt.Println("Two")
+	case 3:
+		fmt.Println("Three")
+	case 4:
+		fmt.Println("Four")
+	case 5:
+		fmt.Println("Five")
+	default:
+		fmt.Println("Other")
+	}
+
+	if result > 100 {
+		fmt.Println("Large result")
 	} else {
-		c.String(http.StatusOK, strings.Join(users, "\n"))
+		if result > 50 {
+			fmt.Println("Medium result")
+		} else {
+			if result > 0 {
+				fmt.Println("Small result")
+			} else {
+				fmt.Println("Non-positive result")
+			}
+		}
 	}
+
+	// Potential nil pointer dereference
+	var ptr *int
+	fmt.Println(*ptr)
+
+	// Ignoring returned error
+	_, _ = os.Open("nonexistent_file.txt")
+}
+
+// ExtremelyBadFunction combines multiple severe code quality issues
+func ExtremelyBadFunction(input string) {
+	// SQL Injection vulnerability
+	query := "SELECT * FROM users WHERE username = '" + input + "'"
+	db.Exec(query) // Executing the vulnerable query
+
+	// Hardcoded credentials (security issue)
+	password := "super_secret_password123"
+
+	// Unused variable (code smell)
+	unusedVar := "This is never used"
+
+	// Infinite loop (bug)
+	for {
+		fmt.Println("This will run forever")
+	}
+
+	// Unreachable code (dead code)
+	fmt.Println("This will never be reached")
+
+	// Ignoring errors
+	file, _ := os.Open("non_existent_file.txt")
+	defer file.Close()
+
+	// Potential nil pointer dereference
+	var ptr *int
+	fmt.Println(*ptr)
+
+	// Large cognitive complexity
+	if input == "admin" {
+		if password == "super_secret_password123" {
+			if time.Now().Hour() < 12 {
+				if len(input) > 5 {
+					if strings.HasPrefix(input, "a") {
+						fmt.Println("Extremely nested condition")
+					}
+				}
+			}
+		}
+	}
+
+	// Duplicate code
+	fmt.Println("This is duplicate")
+	fmt.Println("This is duplicate")
+	fmt.Println("This is duplicate")
+
+	// Using deprecated function (assuming it's deprecated)
+	crypto.MD5.New()
 }

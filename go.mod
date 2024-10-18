@@ -1,8 +1,11 @@
 module sonar-cloud-go
 
-go 1.22.5
+go 1.21.0
+
+toolchain go1.21.13
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-sql-driver/mysql v1.8.1
 )

@@ -1,0 +1,64 @@
+Slide 1: Title Slide
+- Title: "SonarCloud Integration with GitHub"
+- Subtitle: "Enhancing Code Quality in Go Projects"
+- Image: SonarCloud logo (blue cloud with 'SonarCloud' text) and GitHub logo (black octopus silhouette) side by side
+
+Slide 2: What is SonarCloud?
+- Text content as before
+- Image: Screenshot of SonarCloud dashboard showing project overview with metrics like code smells, bugs, and vulnerabilities
+
+Slide 3: Key Features of SonarCloud
+- Text content as before
+- Image: Infographic showing icons for each feature (e.g., magnifying glass for code review, bug icon for bug detection) connected in a circular layout
+
+Slide 4: Integration with GitHub
+- Text content as before
+- Image: Flowchart showing GitHub repository connected to SonarCloud, with arrows indicating code push, analysis, and feedback loop
+
+Slide 5: Setting Up SonarCloud with GitHub
+- Text content as before
+- Images: Series of small screenshots showing:
+  1. SonarCloud signup page
+  2. GitHub integration page in SonarCloud
+  3. Repository selection in SonarCloud
+  4. GitHub Actions workflow setup page
+  5. Example of sonar-project.properties file
+
+Slide 6: GitHub Actions Workflow
+- Text content as before
+- Image: Screenshot of GitHub Actions workflow file with key parts highlighted
+
+Slide 7: sonar-project.properties
+- Text content as before
+- Image: Screenshot of sonar-project.properties file with annotations explaining each line
+
+Slide 8: Pros of Using SonarCloud
+- Text content as before
+- Images: Custom icons for each pro (e.g., robot for automation, GitHub logo for integration, multi-colored code symbols for multi-language support)
+
+Slide 9: Cons and Challenges
+- Text content as before
+- Images: Custom icons for each con (e.g., steep hill for learning curve, dollar sign for cost, warning sign for false positives)
+
+Slide 10: Best Practices
+- Text content as before
+- Image: Infographic showing the 5 best practices in a circular or step-by-step layout
+
+Slide 11: Demo
+- Text content as before
+- Images: 
+  1. Screenshot of SonarCloud dashboard for a Go project
+  2. Screenshot of GitHub pull request with SonarCloud comments
+  3. Before/after code snippet showing resolution of an identified issue
+
+Slide 12: Case Study
+- Text content as before
+- Image: Bar graph or line chart showing improvements in code quality metrics over time
+
+Slide 13: Resources
+- Text content as before
+- Images: QR codes for each resource link
+
+Slide 14: Q&A
+- Text content as before
+- Image: Stock photo of a diverse group of developers or a question mark icon
